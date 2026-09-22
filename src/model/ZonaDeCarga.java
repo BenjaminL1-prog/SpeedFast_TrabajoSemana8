@@ -35,4 +35,8 @@ public class ZonaDeCarga {
 
         return null;
     }
+
+    public synchronized ArrayList<Pedido> getPedidos() {
+        return new ArrayList<>(pedidos);
+    }
 }
