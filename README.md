@@ -4,9 +4,9 @@ Sistema de gestión de pedidos desarrollado en Java para la empresa de reparto *
 
 El proyecto representa distintos tipos de pedidos y utiliza conceptos fundamentales de **Programación Orientada a Objetos**, especialmente clases abstractas, herencia, polimorfismo, sobrecarga, sobreescritura e interfaces.
 
-En esta versión se incorpora el uso de **programación concurrente y sincronización de procesos**, permitiendo que distintos repartidores trabajen simultáneamente sobre una zona de carga compartida mediante `Runnable`, `ExecutorService` y métodos `synchronized`.
+En esta versión se incorpora la conexión con una base de datos **MySQL mediante JDBC**, permitiendo almacenar y recuperar información de pedidos, repartidores y entregas de forma persistente.
 
-Además, se incorpora una **interfaz gráfica de usuario (GUI)** desarrollada con **Java Swing**, permitiendo registrar, visualizar y gestionar pedidos mediante ventanas y componentes gráficos.
+Además, se implementa un sistema **CRUD completo (Crear, Leer, Actualizar y Eliminar)** utilizando clases DAO, `PreparedStatement` y `ResultSet`, integrando estas operaciones directamente con una interfaz gráfica desarrollada mediante **Java Swing**.
 
 ## Descripción
 
@@ -18,150 +18,118 @@ SpeedFast gestiona tres tipos de pedidos:
 
 El sistema utiliza una jerarquía de clases basada en una clase abstracta `Pedido`, permitiendo reutilizar atributos y métodos comunes y definir un cálculo de tiempo específico para cada tipo de pedido.
 
-Además, se incorporan interfaces para separar responsabilidades relacionadas con el despacho, la cancelación y el seguimiento de los pedidos.
+También se incorporan interfaces para separar responsabilidades relacionadas con el despacho, la cancelación y el seguimiento de los pedidos.
 
-En esta versión se incorpora el control de estados mediante el enumerador `EstadoPedido`, que permite representar los estados `PENDIENTE`, `EN_REPARTO` y `ENTREGADO`.
+El control de estados se realiza mediante el enumerador `EstadoPedido`, que permite representar los estados:
 
-También se incorpora la clase `ZonaDeCarga`, que funciona como un recurso compartido entre los repartidores. Sus métodos de acceso utilizan `synchronized` para controlar el acceso concurrente a los pedidos y evitar que dos repartidores retiren el mismo pedido.
+```text
+PENDIENTE
+EN_REPARTO
+ENTREGADO
+```
 
-La clase `Repartidor` implementa `Runnable` y permite ejecutar las entregas de varios repartidores de manera concurrente. Cada repartidor accede a la misma `ZonaDeCarga`, retira pedidos disponibles y actualiza su estado durante el proceso de entrega.
+La clase `ZonaDeCarga` funciona como un recurso compartido entre los repartidores. Sus métodos utilizan `synchronized` para controlar el acceso concurrente a los pedidos y evitar que dos repartidores retiren simultáneamente el mismo pedido.
 
-## Interfaz gráfica
+La clase `Repartidor` implementa `Runnable`, permitiendo ejecutar las entregas de distintos repartidores de manera concurrente.
 
-La aplicación incorpora una interfaz gráfica desarrollada con **Java Swing**, permitiendo interactuar con el sistema sin depender exclusivamente de la consola.
+## Persistencia con MySQL
 
-La ventana principal contiene las siguientes opciones:
+En esta versión, la información del sistema se almacena en una base de datos **MySQL** llamada:
 
-* **Registrar pedido:** permite ingresar un nuevo pedido indicando su ID, dirección y tipo.
-* **Listar pedidos:** muestra los pedidos registrados mediante una tabla.
-* **Asignar repartidor / Iniciar entrega:** permite iniciar el proceso de entregas concurrentes.
+```text
+speedfast_db
+```
 
-### Registro de pedidos
+La aplicación utiliza **JDBC (Java Database Connectivity)** para establecer la conexión entre Java y MySQL.
 
-La ventana de registro permite ingresar:
+La conexión se centraliza mediante la clase:
 
-* ID del pedido.
-* Dirección de entrega.
-* Tipo de pedido mediante un `JComboBox`.
+```text
+ConexionDB
+```
 
-El sistema valida que el ID sea numérico, mayor que cero, que la dirección no esté vacía y que no exista otro pedido con el mismo ID.
+Esta clase permite reutilizar la conexión a la base de datos desde las distintas clases DAO.
 
-Una vez registrado correctamente, el pedido se agrega a la lista de pedidos y a la zona de carga compartida.
+La base de datos contiene las siguientes tablas principales:
 
-### Lista de pedidos
+```text
+repartidor
+pedido
+entrega
+```
 
-La ventana de listado utiliza un `JTable` junto con un `DefaultTableModel` para mostrar la información de los pedidos registrados.
+Estas tablas permiten almacenar la información de los repartidores, pedidos y entregas realizadas.
 
-La tabla permite visualizar:
+## Patrón DAO
+
+Para separar la lógica de acceso a datos de la lógica de negocio, el proyecto utiliza clases **DAO (Data Access Object)**.
+
+Las principales clases DAO son:
+
+* `RepartidorDAO`
+* `PedidoDAO`
+* `EntregaDAO`
+
+Cada DAO se encarga de realizar las operaciones correspondientes sobre su entidad.
+
+Las operaciones implementadas incluyen:
+
+* **Create:** registrar nuevos datos.
+* **Read:** consultar y listar datos almacenados.
+* **Update:** modificar registros existentes.
+* **Delete:** eliminar registros.
+
+Las consultas utilizan `PreparedStatement` para enviar los parámetros a MySQL y `ResultSet` para recuperar los resultados de las consultas.
+
+Además, se utilizan bloques `try-with-resources` para cerrar automáticamente las conexiones, sentencias y resultados utilizados durante las operaciones con la base de datos.
+
+## CRUD de repartidores
+
+El sistema permite gestionar los repartidores registrados en MySQL.
+
+Desde la interfaz gráfica es posible:
+
+* Registrar un nuevo repartidor.
+* Listar los repartidores registrados.
+* Editar el nombre de un repartidor.
+* Eliminar un repartidor.
+* Limpiar los campos del formulario.
+
+La información se muestra mediante un `JTable` con las columnas:
+
+```text
+ID
+Nombre
+```
+
+La gestión de repartidores se realiza mediante la clase:
+
+```text
+VentanaGestionRepartidores
+```
+
+y utiliza `RepartidorDAO` para realizar las operaciones sobre MySQL.
+
+## CRUD de pedidos
+
+El sistema permite gestionar los pedidos almacenados en la base de datos.
+
+Cada pedido contiene información relacionada con:
 
 * ID.
-* Dirección.
+* Dirección de entrega.
 * Tipo de pedido.
-* Distancia.
 * Estado actual.
 
-También cuenta con una opción para **actualizar la tabla**, permitiendo visualizar los cambios de estado producidos durante las entregas.
-
-## Controlador de pedidos
-
-La clase `ControladorPedidos` centraliza la gestión de los pedidos y permite compartir la misma información entre las distintas ventanas de la aplicación.
-
-Sus principales responsabilidades son:
-
-* Mantener la lista de pedidos.
-* Crear y agregar nuevos pedidos.
-* Validar IDs duplicados.
-* Buscar pedidos por ID.
-* Obtener el siguiente ID disponible.
-* Mantener la zona de carga compartida.
-* Iniciar las entregas concurrentes mediante varios repartidores.
-
-Los pedidos iniciales utilizados en el sistema corresponden a seis ejemplos creados previamente, sobre los cuales se pueden agregar nuevos pedidos desde la interfaz gráfica.
-
-## Programación concurrente
-
-El sistema utiliza tres repartidores:
-
-* **Camila**
-* **Luis**
-* **Pedro**
-
-Los tres trabajan sobre la misma instancia de `ZonaDeCarga`.
-
-La ejecución concurrente se realiza mediante `ExecutorService` y un grupo de tres hilos. Cada repartidor implementa `Runnable`, retira pedidos pendientes de la zona de carga y realiza la entrega.
-
-El acceso sincronizado mediante `synchronized` evita que dos repartidores retiren simultáneamente el mismo pedido.
-
-Durante el proceso, los estados de los pedidos cambian de:
+Los tipos disponibles son:
 
 ```text
-PENDIENTE
-    ↓
-EN_REPARTO
-    ↓
-ENTREGADO
+COMIDA
+ENCOMIENDA
+EXPRESS
 ```
 
-## Estructura del proyecto
-
-```text
-src
-├── main
-│   └── Main.java
-│
-├── controller
-│   └── ControladorPedidos.java
-│
-├── model
-│   ├── Pedido.java
-│   ├── PedidoComida.java
-│   ├── PedidoEncomienda.java
-│   ├── PedidoExpress.java
-│   ├── Repartidor.java
-│   ├── EstadoPedido.java
-│   └── ZonaDeCarga.java
-│
-├── view
-│   ├── VentanaPrincipal.java
-│   ├── VentanaRegistroPedido.java
-│   └── VentanaListaPedidos.java
-│
-└── interfaces
-    ├── Despachable.java
-    ├── Cancelable.java
-    └── Rastreable.java
-```
-
-### Clases principales
-
-**Pedido**
-
-Clase abstracta que contiene los atributos generales de un pedido:
-
-* `idPedido`
-* `direccionEntrega`
-* `distanciaKm`
-* `estado`
-
-También implementa el método `mostrarResumen()` y declara el método abstracto `calcularTiempoEntrega()`.
-
-Además, implementa las interfaces `Despachable`, `Cancelable` y `Rastreable`, incorporando las funcionalidades de despacho, cancelación y visualización del historial de operaciones.
-
-**PedidoComida**
-
-Hereda de `Pedido` y representa los pedidos de comida. Implementa su propio cálculo de tiempo de entrega y permite asignar un repartidor de forma automática o manual.
-
-**PedidoEncomienda**
-
-Hereda de `Pedido` y representa los pedidos de encomienda. Implementa su propio cálculo de tiempo de entrega y permite asignar un repartidor de forma automática o manual.
-
-**PedidoExpress**
-
-Hereda de `Pedido` y representa los pedidos express. Su tiempo de entrega depende de la distancia y permite asignar un repartidor de forma automática o manual.
-
-**EstadoPedido**
-
-Enumeración utilizada para representar el estado actual de cada pedido:
+Los estados disponibles son:
 
 ```text
 PENDIENTE
@@ -169,56 +137,44 @@ EN_REPARTO
 ENTREGADO
 ```
 
-**ZonaDeCarga**
+Desde la interfaz gráfica es posible:
 
-Representa la zona de carga compartida por los repartidores. Utiliza métodos `synchronized` para controlar el acceso concurrente a los pedidos.
+* Registrar pedidos.
+* Listar pedidos.
+* Editar pedidos.
+* Eliminar pedidos.
+* Modificar el tipo de pedido.
+* Modificar el estado del pedido.
 
-**Repartidor**
+La información se muestra mediante un `JTable`.
 
-Implementa `Runnable` y representa a los repartidores encargados de retirar y entregar pedidos de manera concurrente.
-
-**ControladorPedidos**
-
-Centraliza la gestión de los pedidos y sirve como intermediario entre la interfaz gráfica y las clases del modelo.
-
-**VentanaPrincipal**
-
-Ventana principal de la aplicación. Permite acceder al registro de pedidos, listado de pedidos e inicio de las entregas.
-
-**VentanaRegistroPedido**
-
-Ventana gráfica utilizada para registrar nuevos pedidos mediante campos de texto y un `JComboBox`.
-
-**VentanaListaPedidos**
-
-Ventana gráfica que muestra los pedidos mediante un `JTable` y permite actualizar la información mostrada.
-
-**Main**
-
-Clase principal encargada de iniciar la aplicación gráfica mediante `SwingUtilities.invokeLater()`.
-
-## Tecnologías utilizadas
-
-* **Java**
-* **Java Swing**
-* **Programación Orientada a Objetos**
-* **Programación concurrente**
-* **Runnable**
-* **ExecutorService**
-* **Sincronización mediante `synchronized`**
-* **JFrame**
-* **JTable**
-* **DefaultTableModel**
-* **JComboBox**
-* **JOptionPane**
-
-## Ejecución
-
-La aplicación se inicia ejecutando la clase:
+La gestión se realiza mediante:
 
 ```text
-main.Main
+VentanaGestionPedidos
 ```
 
-Al iniciar, se muestra la ventana principal de SpeedFast desde la cual se puede acceder a las distintas funcionalidades del sistema.
+utilizando `PedidoDAO` para comunicarse con MySQL.
+
+## CRUD de entregas
+
+El sistema también permite gestionar las entregas asociadas a los pedidos y repartidores.
+
+Cada entrega almacena:
+
+* ID de la entrega.
+* ID del pedido.
+* ID del repartidor.
+* Fecha.
+* Hora.
+
+Desde la interfaz gráfica es posible:
+
+* Registrar una entrega.
+* Listar entregas.
+* Editar una entrega.
+* Eliminar una entrega.
+
+La ventana de gestión permite seleccio
+
 
