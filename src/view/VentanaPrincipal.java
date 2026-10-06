@@ -19,7 +19,7 @@ public class VentanaPrincipal extends JFrame {
         this.controlador = controlador;
 
         setTitle("SISTEMA DE REPARTOS SPEEDFAST");
-        setSize(500, 350);
+        setSize(500, 450);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -40,15 +40,43 @@ public class VentanaPrincipal extends JFrame {
         add(titulo, BorderLayout.NORTH);
 
         JPanel panelBotones = new JPanel();
-        panelBotones.setLayout(new GridLayout(3, 1, 10, 10));
 
-        JButton botonRegistrar = new JButton("Registrar pedido");
-        JButton botonListar = new JButton("Listar pedidos");
-        JButton botonEntregas = new JButton("Asignar repartidor / Iniciar entrega");
+        panelBotones.setLayout(
+                new GridLayout(6, 1, 10, 10)
+        );
+
+        JButton botonRegistrar =
+                new JButton("Registrar pedido");
+
+        JButton botonListar =
+                new JButton("Listar pedidos");
+
+        JButton botonEntregas =
+                new JButton(
+                        "Asignar repartidor / Iniciar entrega"
+                );
+
+        JButton botonRepartidores =
+                new JButton(
+                        "Gestionar repartidores"
+                );
+
+        JButton botonGestionPedidos =
+                new JButton(
+                        "Gestionar pedidos"
+                );
+
+        JButton botonGestionEntregas =
+                new JButton(
+                        "Gestionar entregas"
+                );
 
         panelBotones.add(botonRegistrar);
         panelBotones.add(botonListar);
         panelBotones.add(botonEntregas);
+        panelBotones.add(botonRepartidores);
+        panelBotones.add(botonGestionPedidos);
+        panelBotones.add(botonGestionEntregas);
 
         add(panelBotones, BorderLayout.CENTER);
 
@@ -71,6 +99,30 @@ public class VentanaPrincipal extends JFrame {
         botonEntregas.addActionListener(e -> {
 
             iniciarEntregas();
+        });
+
+        botonRepartidores.addActionListener(e -> {
+
+            VentanaGestionRepartidores ventana =
+                    new VentanaGestionRepartidores();
+
+            ventana.setVisible(true);
+        });
+
+        botonGestionPedidos.addActionListener(e -> {
+
+            VentanaGestionPedidos ventana =
+                    new VentanaGestionPedidos();
+
+            ventana.setVisible(true);
+        });
+
+        botonGestionEntregas.addActionListener(e -> {
+
+            VentanaGestionEntregas ventana =
+                    new VentanaGestionEntregas();
+
+            ventana.setVisible(true);
         });
     }
 

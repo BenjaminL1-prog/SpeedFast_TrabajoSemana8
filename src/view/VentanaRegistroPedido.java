@@ -9,7 +9,6 @@ public class VentanaRegistroPedido extends JFrame {
 
     private ControladorPedidos controlador;
 
-    private JTextField campoId;
     private JTextField campoDireccion;
     private JComboBox<String> comboTipo;
 
@@ -39,18 +38,16 @@ public class VentanaRegistroPedido extends JFrame {
         add(titulo, BorderLayout.NORTH);
 
         JPanel panelFormulario = new JPanel(
-                new GridLayout(3, 2, 10, 10)
+                new GridLayout(2, 2, 10, 10)
         );
 
         panelFormulario.setBorder(
                 BorderFactory.createEmptyBorder(20, 20, 20, 20)
         );
 
-        JLabel etiquetaId = new JLabel("ID:");
         JLabel etiquetaDireccion = new JLabel("Dirección:");
         JLabel etiquetaTipo = new JLabel("Tipo:");
 
-        campoId = new JTextField();
         campoDireccion = new JTextField();
 
         comboTipo = new JComboBox<>(
@@ -60,9 +57,6 @@ public class VentanaRegistroPedido extends JFrame {
                         "express"
                 }
         );
-
-        panelFormulario.add(etiquetaId);
-        panelFormulario.add(campoId);
 
         panelFormulario.add(etiquetaDireccion);
         panelFormulario.add(campoDireccion);
@@ -76,7 +70,6 @@ public class VentanaRegistroPedido extends JFrame {
         JButton botonVolver = new JButton("Volver al menú");
 
         botonGuardar.addActionListener(e -> guardarPedido());
-
         botonVolver.addActionListener(e -> dispose());
 
         JPanel panelBotones = new JPanel();
@@ -89,80 +82,31 @@ public class VentanaRegistroPedido extends JFrame {
 
     private void guardarPedido() {
 
-        String textoId = campoId.getText().trim();
         String direccion = campoDireccion.getText().trim();
         String tipo = comboTipo.getSelectedItem().toString();
 
-        if (textoId.isEmpty()) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Debe ingresar un ID.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-
-            return;
-        }
-
         if (direccion.isEmpty()) {
-
             JOptionPane.showMessageDialog(
                     this,
                     "Debe ingresar una dirección.",
                     "Error",
                     JOptionPane.ERROR_MESSAGE
             );
-
-            return;
-        }
-
-        int id;
-
-        try {
-
-            id = Integer.parseInt(textoId);
-
-            if (id <= 0) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "El ID debe ser un número mayor que cero.",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
-
-                return;
-            }
-
-        } catch (NumberFormatException e) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "El ID debe ser un número entero.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-
             return;
         }
 
         boolean agregado = controlador.agregarPedido(
-                id,
                 direccion,
                 tipo
         );
 
         if (!agregado) {
-
             JOptionPane.showMessageDialog(
                     this,
-                    "No se pudo registrar el pedido.\n"
-                            + "Verifique que el ID no esté repetido.",
+                    "No se pudo registrar el pedido.",
                     "Error",
                     JOptionPane.ERROR_MESSAGE
             );
-
             return;
         }
 
@@ -173,7 +117,6 @@ public class VentanaRegistroPedido extends JFrame {
                 JOptionPane.INFORMATION_MESSAGE
         );
 
-        campoId.setText("");
         campoDireccion.setText("");
         comboTipo.setSelectedIndex(0);
     }

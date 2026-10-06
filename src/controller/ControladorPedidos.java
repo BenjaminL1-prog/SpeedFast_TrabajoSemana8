@@ -1,5 +1,7 @@
 package controller;
 
+import dao.PedidoDAO;
+import dao.RepartidorDAO;
 import model.Pedido;
 import model.PedidoComida;
 import model.PedidoEncomienda;
@@ -8,6 +10,7 @@ import model.Repartidor;
 import model.ZonaDeCarga;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -16,101 +19,84 @@ public class ControladorPedidos {
 
     private ArrayList<Pedido> pedidos;
     private ZonaDeCarga zonaDeCarga;
+    private PedidoDAO pedidoDAO;
+    private RepartidorDAO repartidorDAO;
 
     public ControladorPedidos() {
+
         pedidos = new ArrayList<>();
         zonaDeCarga = new ZonaDeCarga();
+        pedidoDAO = new PedidoDAO();
+        repartidorDAO = new RepartidorDAO();
 
-        cargarPedidosIniciales();
+        cargarPedidosDesdeDB();
     }
 
-    private void cargarPedidosIniciales() {
+    private void cargarPedidosDesdeDB() {
 
-        PedidoComida pedidoComida1 = new PedidoComida(
-                1,
-                "Av. Providencia 1234",
-                4.0
-        );
+        List<Pedido> pedidosBD =
+                pedidoDAO.listarTodos();
 
-        PedidoComida pedidoComida2 = new PedidoComida(
-                2,
-                "Av. Apoquindo 456",
-                3.0
-        );
+        for (Pedido pedido : pedidosBD) {
 
-        PedidoEncomienda pedidoEncomienda1 = new PedidoEncomienda(
-                3,
-                "Av. Las Condes 2456",
-                6.0
-        );
+            pedidos.add(pedido);
 
-        PedidoEncomienda pedidoEncomienda2 = new PedidoEncomienda(
-                4,
-                "Av. Kennedy 1234",
-                5.0
-        );
+            if (pedido.getEstado()
+                    == model.EstadoPedido.PENDIENTE) {
 
-        PedidoExpress pedidoExpress1 = new PedidoExpress(
-                5,
-                "Av. Vicuña Mackenna 789",
-                7.0
-        );
-
-        PedidoExpress pedidoExpress2 = new PedidoExpress(
-                6,
-                "Av. Grecia 321",
-                4.0
-        );
-
-        agregarPedidoInicial(pedidoComida1);
-        agregarPedidoInicial(pedidoComida2);
-        agregarPedidoInicial(pedidoEncomienda1);
-        agregarPedidoInicial(pedidoEncomienda2);
-        agregarPedidoInicial(pedidoExpress1);
-        agregarPedidoInicial(pedidoExpress2);
-    }
-
-    private void agregarPedidoInicial(Pedido pedido) {
-        pedidos.add(pedido);
-        zonaDeCarga.agregarPedido(pedido);
-    }
-
-    public boolean agregarPedido(int idPedido, String direccion, String tipo) {
-
-        if (buscarPedidoPorId(idPedido) != null) {
-            return false;
+                zonaDeCarga.agregarPedido(pedido);
+            }
         }
+    }
+
+    public boolean agregarPedido(
+            String direccion,
+            String tipo
+    ) {
 
         Pedido nuevoPedido;
 
         switch (tipo.toLowerCase()) {
 
             case "comida":
+
                 nuevoPedido = new PedidoComida(
-                        idPedido,
+                        0,
                         direccion,
                         0.0
                 );
+
                 break;
 
             case "encomienda":
+
                 nuevoPedido = new PedidoEncomienda(
-                        idPedido,
+                        0,
                         direccion,
                         0.0
                 );
+
                 break;
 
             case "express":
+
                 nuevoPedido = new PedidoExpress(
-                        idPedido,
+                        0,
                         direccion,
                         0.0
                 );
+
                 break;
 
             default:
                 return false;
+        }
+
+        boolean guardado =
+                pedidoDAO.guardar(nuevoPedido);
+
+        if (!guardado) {
+            return false;
         }
 
         pedidos.add(nuevoPedido);
@@ -120,18 +106,31 @@ public class ControladorPedidos {
     }
 
     public ArrayList<Pedido> getPedidos() {
+
         return pedidos;
     }
 
+    public ArrayList<Pedido> listarPedidosDesdeDB() {
+
+        return new ArrayList<>(
+                pedidoDAO.listarTodos()
+        );
+    }
+
     public ZonaDeCarga getZonaDeCarga() {
+
         return zonaDeCarga;
     }
 
-    public Pedido buscarPedidoPorId(int idPedido) {
+    public Pedido buscarPedidoPorId(
+            int idPedido
+    ) {
 
         for (Pedido pedido : pedidos) {
 
-            if (pedido.getIdPedido() == idPedido) {
+            if (pedido.getIdPedido()
+                    == idPedido) {
+
                 return pedido;
             }
         }
@@ -139,42 +138,35 @@ public class ControladorPedidos {
         return null;
     }
 
-    public int obtenerSiguienteId() {
-
-        int mayorId = 0;
-
-        for (Pedido pedido : pedidos) {
-
-            if (pedido.getIdPedido() > mayorId) {
-                mayorId = pedido.getIdPedido();
-            }
-        }
-
-        return mayorId + 1;
-    }
-
     public void iniciarEntregas() {
 
-        Repartidor camila = new Repartidor(
-                "Camila",
-                zonaDeCarga
-        );
+        List<Repartidor> repartidores =
+                repartidorDAO.listarTodos();
 
-        Repartidor luis = new Repartidor(
-                "Luis",
-                zonaDeCarga
-        );
+        if (repartidores.isEmpty()) {
 
-        Repartidor pedro = new Repartidor(
-                "Pedro",
-                zonaDeCarga
-        );
+            System.out.println(
+                    "No hay repartidores registrados "
+                            + "en MySQL."
+            );
 
-        ExecutorService executor = Executors.newFixedThreadPool(3);
+            return;
+        }
 
-        executor.submit(camila);
-        executor.submit(luis);
-        executor.submit(pedro);
+        ExecutorService executor =
+                Executors.newFixedThreadPool(
+                        repartidores.size()
+                );
+
+        for (Repartidor repartidor :
+                repartidores) {
+
+            repartidor.setZonaDeCarga(
+                    zonaDeCarga
+            );
+
+            executor.submit(repartidor);
+        }
 
         executor.shutdown();
 
@@ -182,10 +174,14 @@ public class ControladorPedidos {
 
             try {
 
-                if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                if (!executor.awaitTermination(
+                        30,
+                        TimeUnit.SECONDS
+                )) {
 
                     System.out.println(
-                            "El proceso de entregas tardó demasiado."
+                            "El proceso de entregas "
+                                    + "tardó demasiado."
                     );
 
                     executor.shutdownNow();
@@ -194,10 +190,12 @@ public class ControladorPedidos {
             } catch (InterruptedException e) {
 
                 System.out.println(
-                        "El proceso de entregas fue interrumpido."
+                        "El proceso de entregas "
+                                + "fue interrumpido."
                 );
 
                 executor.shutdownNow();
+
                 Thread.currentThread().interrupt();
             }
 

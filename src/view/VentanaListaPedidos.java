@@ -6,6 +6,7 @@ import model.Pedido;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.ArrayList;
 
 public class VentanaListaPedidos extends JFrame {
 
@@ -13,7 +14,9 @@ public class VentanaListaPedidos extends JFrame {
     private DefaultTableModel modeloTabla;
     private JTable tablaPedidos;
 
-    public VentanaListaPedidos(ControladorPedidos controlador) {
+    public VentanaListaPedidos(
+            ControladorPedidos controlador
+    ) {
 
         this.controlador = controlador;
 
@@ -35,7 +38,13 @@ public class VentanaListaPedidos extends JFrame {
                 SwingConstants.CENTER
         );
 
-        titulo.setFont(new Font("Arial", Font.BOLD, 20));
+        titulo.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        20
+                )
+        );
 
         add(titulo, BorderLayout.NORTH);
 
@@ -47,40 +56,68 @@ public class VentanaListaPedidos extends JFrame {
                 "Estado"
         };
 
-        modeloTabla = new DefaultTableModel(columnas, 0) {
+        modeloTabla =
+                new DefaultTableModel(
+                        columnas,
+                        0
+                ) {
 
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+                    @Override
+                    public boolean isCellEditable(
+                            int row,
+                            int column
+                    ) {
 
-        tablaPedidos = new JTable(modeloTabla);
+                        return false;
+                    }
+                };
+
+        tablaPedidos =
+                new JTable(modeloTabla);
 
         tablaPedidos.setRowHeight(25);
-        tablaPedidos.getTableHeader().setReorderingAllowed(false);
 
-        JScrollPane scrollPane = new JScrollPane(tablaPedidos);
+        tablaPedidos
+                .getTableHeader()
+                .setReorderingAllowed(false);
 
-        add(scrollPane, BorderLayout.CENTER);
+        JScrollPane scrollPane =
+                new JScrollPane(tablaPedidos);
 
-        JButton botonActualizar = new JButton("Actualizar tabla");
+        add(
+                scrollPane,
+                BorderLayout.CENTER
+        );
 
-        botonActualizar.addActionListener(e -> actualizarTabla());
+        JButton botonActualizar =
+                new JButton("Actualizar tabla");
 
-        JPanel panelBoton = new JPanel();
+        botonActualizar.addActionListener(
+                e -> actualizarTabla()
+        );
+
+        JPanel panelBoton =
+                new JPanel();
+
         panelBoton.add(botonActualizar);
 
-        add(panelBoton, BorderLayout.SOUTH);
+        add(
+                panelBoton,
+                BorderLayout.SOUTH
+        );
     }
 
     private void actualizarTabla() {
 
         modeloTabla.setRowCount(0);
 
-        for (Pedido pedido : controlador.getPedidos()) {
+        ArrayList<Pedido> pedidos =
+                controlador.listarPedidosDesdeDB();
 
-            String tipo = obtenerTipoPedido(pedido);
+        for (Pedido pedido : pedidos) {
+
+            String tipo =
+                    obtenerTipoPedido(pedido);
 
             Object[] fila = {
                     pedido.getIdPedido(),
@@ -94,9 +131,12 @@ public class VentanaListaPedidos extends JFrame {
         }
     }
 
-    private String obtenerTipoPedido(Pedido pedido) {
+    private String obtenerTipoPedido(
+            Pedido pedido
+    ) {
 
-        String nombreClase = pedido.getClass().getSimpleName();
+        String nombreClase =
+                pedido.getClass().getSimpleName();
 
         switch (nombreClase) {
 
